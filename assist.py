@@ -5,9 +5,21 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import json
 
+with open('codes.json', 'r') as file:
+    data = json.load(file)
+
+cc_codes = []
+for agreement in list(data):
+    if agreement['isCommunityCollege']:
+        school_id = agreement['id']
+        cc_codes.append(school_id)
+
+print(cc_codes)
+
+'''
 driver = None  # Initialize driver variable outside try block
-
 try:
     # Initialize Chrome WebDriver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
@@ -23,7 +35,7 @@ try:
         element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, f'//awc-agreement-row[{i}]'))
         )
-        if ("VIS 85A" in element.text) :
+        if ("MATH 20A" in element.text) :
             print("Element found: ", element.text)
             search = False
         i += 1
@@ -40,3 +52,4 @@ finally:
     # Ensure the driver quits no matter what
     if driver is not None:  # Only quit if driver was succjssfully created
         driver.quit()
+'''
