@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import json
 
+# Iterate through the college codes to find all community college codes
 with open('codes.json', 'r') as file:
     data = json.load(file)
 
@@ -14,7 +15,11 @@ cc_codes = []
 for agreement in list(data):
     if agreement['isCommunityCollege']:
         school_id = agreement['id']
-        cc_codes.append(school_id)
+        school_names_list = agreement['names']
+        school_names_dict = school_names_list[0]
+        school_name = school_names_dict["name"]
+        curr = {"name": school_name, "id": school_id}
+        cc_codes.append(curr)
 
 print(cc_codes)
 
