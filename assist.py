@@ -29,7 +29,6 @@ prefix = input("Prefix: ")
 number = input("Number: ")
 
 def getPrefixCode(code):
-    time.sleep(0.1)
     with urllib.request.urlopen(
         f'https://assist.org/api/agreements?receivingInstitutionId=7&sendingInstitutionId={code}&academicYearId=75&categoryCode=prefix',
         context=context
@@ -50,15 +49,13 @@ driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 for code in cc_codes:
     name = code["name"]
     id = code["id"]
-    print(name)
+    
 
-    #Compton Community College doesn't exist anymore
+    # Compton Community College doesn't exist anymore
     if (id == 34):
         continue
 
     prefixCode = getPrefixCode(id)
-    print(prefixCode)
-    print(id)
 
     try:
         url = f'https://assist.org/transfer/results?year=75&institution=7&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=75%2F{id}%2Fto%2F7%2FPrefix%2F{prefixCode}'
@@ -67,16 +64,20 @@ for code in cc_codes:
         search = True
         i = 1
         while (search):
-            element = WebDriverWait(driver, 10).until(
+            element = WebDriverWait(driver, 0.1).until(
                 EC.presence_of_element_located((By.XPATH, f'//awc-agreement-row[{i}]'))
             )
-            if ("MATH 20A" in element.text) :
-                print("Element found: ", element.text)
+            if (f"{prefix} {number}" in element.text) :
+                my_list = element.text.splitlines()
+                if ('No Course' not in my_list[3] and 'Timed out' not in my_list[3]):
+                    print(name)
+                    print(id)
+                    print(my_list[3:])
                 search = False
             i += 1
 
     except TimeoutException:
-        print("Timed out waiting for page to load or element to appear.")
+        pass
     except WebDriverException as e:
         print(f"WebDriver encountered an issue: {e}")
 
