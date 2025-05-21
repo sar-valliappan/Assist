@@ -12,18 +12,21 @@ import ssl
 import certifi
 
 context = ssl.create_default_context(cafile=certifi.where())
+
 with urllib.request.urlopen(
     f'https://assist.org/api/institutions/7/agreements', 
     context=context
     ) as url:
     data = json.loads(url.read().decode())
+
 cc_codes = []
 for college in list(data):
     if college['isCommunityCollege']:
         school_id = college['institutionParentId']
         school_name = college['institutionName']
         curr = {'name': school_name, 'id': school_id}
-        cc_codes.append(curr)
+        if not any(d['name'] == school_name for d in cc_codes):
+            cc_codes.append(curr)
 
 prefix = input("Prefix: ")
 number = input("Number: ")
@@ -41,7 +44,6 @@ def getPrefixCode(code):
             prefixList = prefixCode.split("/")
             prefixCode = prefixList[-1]
     return prefixCode
-
 
 driver = None
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
@@ -72,6 +74,7 @@ for code in cc_codes:
                 if ('No Course' not in my_list[3] and 'Timed out' not in my_list[3]):
                     print(name)
                     print(id)
+                    print(prefixCode)
                     print(my_list[3:])
                 search = False
             i += 1
