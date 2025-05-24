@@ -31,6 +31,8 @@ for college in list(data):
 prefix = input("Prefix: ")
 number = input("Number: ")
 
+start_time = time.time()
+
 def getPrefixCode(code):
     with urllib.request.urlopen(
         f'https://assist.org/api/agreements?receivingInstitutionId=7&sendingInstitutionId={code}&academicYearId=75&categoryCode=prefix',
@@ -48,19 +50,18 @@ def getPrefixCode(code):
 driver = None
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
+pC = getPrefixCode(cc_codes[0]["id"])
+
 for code in cc_codes:
     name = code["name"]
     id = code["id"]
-    
 
     # Compton Community College doesn't exist anymore
     if (id == 34):
         continue
 
-    prefixCode = getPrefixCode(id)
-
     try:
-        url = f'https://assist.org/transfer/results?year=75&institution=7&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=75%2F{id}%2Fto%2F7%2FPrefix%2F{prefixCode}'
+        url = f'https://assist.org/transfer/results?year=75&institution=7&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=75%2F{id}%2Fto%2F7%2FPrefix%2F{pC}'
         driver.get(url)
         
         search = True
@@ -71,10 +72,8 @@ for code in cc_codes:
             )
             if (f"{prefix} {number}" in element.text) :
                 my_list = element.text.splitlines()
-                if ('No Course' not in my_list[3] and 'Timed out' not in my_list[3]):
+                if ('No Course' not in my_list[3]):
                     print(name)
-                    print(id)
-                    print(prefixCode)
                     print(my_list[3:])
                 search = False
             i += 1
@@ -86,3 +85,6 @@ for code in cc_codes:
 
 if driver is not None:
     driver.quit()
+
+end_time = time.time()
+print(end_time - start_time)
