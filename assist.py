@@ -61,7 +61,7 @@ for code in cc_codes:
         continue
 
     try:
-        url = f'https://assist.org/transfer/results?year=75&institution=7&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=75%2F{id}%2Fto%2F7%2FPrefix%2F{pC}'
+        url = f'https://assist.org/transfer/results?year=76&institution=7&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=75%2F{id}%2Fto%2F7%2FPrefix%2F{pC}'
         driver.get(url)
         
         search = True
