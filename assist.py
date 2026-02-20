@@ -1,20 +1,13 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.common.exceptions import WebDriverException, TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import json
 import time
 import urllib
+import urllib.request
 import ssl
 import certifi
 
 context = ssl.create_default_context(cafile=certifi.where())
 
 origin_acronym = input("Origin UC (type acronym): ")
-
 origin_acronym = origin_acronym.strip().upper()
 
 with urllib.request.urlopen(
@@ -60,50 +53,105 @@ def getPrefixCode(code):
         data = json.loads(url.read().decode())
     data = data['reports']
     for report in list(data):
-        if prefix in report['label'] and report['ownerInstitutionId'] == origin_id:
-            prefixCode = report['key']
-            prefixList = prefixCode.split("/")
-            prefixCode = prefixList[-1]
-    return prefixCode
+        if prefix.upper() in report['label'].upper() and report['ownerInstitutionId'] == origin_id:
+            return report['key']
+        
+    return None
 
-driver = None
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+def getAgreementData(key):
+    encoded_key = urllib.parse.quote(key, safe="")
+    url = f"https://prod.assistng.org/articulation/api/Agreements?Key={encoded_key}"
 
-pC = getPrefixCode(cc_codes[0]["id"])
+    req = urllib.request.Request(url)
+
+    with urllib.request.urlopen(req, context=context) as response:
+        return json.loads(response.read().decode())
+
+def searchAgreement(data):
+    if not data.get("isSuccessful"):
+        return None
+
+    result = data.get("result", {})
+
+    articulations_raw = result.get("articulations")
+    if not articulations_raw:
+        return None
+
+    articulations = json.loads(articulations_raw)
+
+    target_prefix = prefix.upper()
+    target_number = number.upper()
+
+    for articulation in articulations:
+        course = articulation.get("course")
+        if not course:
+            continue
+
+        rec_prefix = course.get("prefix", "").upper()
+        rec_number = course.get("courseNumber", "").upper()
+
+        if rec_prefix == target_prefix and rec_number == target_number:
+            return articulation   # return full articulation block
+
+    return None
+
+def parse_articulation(data):
+    sending = data.get("sendingArticulation", {})
+    groups = sending.get("items", [])
+    group_conjunctions = sending.get("courseGroupConjunctions", [])
+
+    group_strings = []
+
+    # Build each group string
+    for group in groups:
+        conj = group.get("courseConjunction", "And")
+        courses = []
+
+        for course in group.get("items", []):
+            prefix_c = course.get("prefix", "")
+            number_c = course.get("courseNumber", "")
+            courses.append(f"{prefix_c} {number_c} ".strip())
+
+        if len(courses) == 1:
+            group_strings.append(courses[0])
+        else:
+            joiner = f" {conj.upper()} "
+            group_strings.append("(" + joiner.join(courses) + ")")
+
+    # Apply group-level conjunctions
+    if group_conjunctions:
+        conj = group_conjunctions[0]
+        begin = conj["sendingCourseGroupBeginPosition"]
+        end = conj["sendingCourseGroupEndPosition"]
+        operator = conj["groupConjunction"].upper()
+        combined = f"{group_strings[begin]} {operator} {group_strings[end]}"
+        return combined
+
+    return group_strings[0] if group_strings else None
 
 for code in cc_codes:
     name = code["name"]
-    id = code["id"]
+    sending_id = code["id"]
 
     # Compton Community College doesn't exist anymore
-    if (id == 34):
+    if sending_id == 34:
         continue
 
     try:
-        url = f'https://assist.org/transfer/results?year=76&institution={origin_id}&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=76%2F{id}%2Fto%2F{origin_id}%2FPrefix%2F{pC}'
-        driver.get(url)
-        
-        search = True
-        i = 1
-        while (search):
-            element = WebDriverWait(driver, 0.1).until(
-                EC.presence_of_element_located((By.XPATH, f'//awc-agreement-row[{i}]'))
-            )
-            if (f"{prefix} {number}" in element.text) :
-                my_list = element.text.splitlines()
-                if ('No Course' not in my_list[3]):
-                    print(name)
-                    print(my_list[3:])
-                search = False
-            i += 1
+        prefix_key = getPrefixCode(sending_id)
 
-    except TimeoutException:
-        pass
-    except WebDriverException as e:
-        print(f"WebDriver encountered an issue: {e}")
+        agreement_data = getAgreementData(prefix_key)
 
-if driver is not None:
-    driver.quit()
+        articulation = searchAgreement(agreement_data)
+
+        result = parse_articulation(articulation)
+
+        if result:
+            print(name)
+            print(result)
+
+    except Exception as e:
+        continue
 
 end_time = time.time()
 print(end_time - start_time)
