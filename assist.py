@@ -7,7 +7,7 @@ import certifi
 
 context = ssl.create_default_context(cafile=certifi.where())
 
-origin_acronym = input("Origin UC (type acronym): ")
+origin_acronym = input("Receiving institution (type acronym): ")
 origin_acronym = origin_acronym.strip().upper()
 
 with urllib.request.urlopen(
@@ -53,7 +53,8 @@ def getPrefixCode(code):
         data = json.loads(url.read().decode())
     data = data['reports']
     for report in list(data):
-        if prefix.upper() in report['label'].upper() and report['ownerInstitutionId'] == origin_id:
+        label_parts = report['label'].upper().split()
+        if label_parts[0] == prefix.upper() and report['ownerInstitutionId'] == origin_id:
             return report['key']
         
     return None
