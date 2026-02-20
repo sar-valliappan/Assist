@@ -13,11 +13,30 @@ import certifi
 
 context = ssl.create_default_context(cafile=certifi.where())
 
+origin_acronym = input("Origin UC (type acronym): ")
+
+origin_acronym = origin_acronym.strip().upper()
+
 with urllib.request.urlopen(
-    f'https://assist.org/api/institutions/7/agreements', 
-    context=context
+        "https://assist.org/api/institutions",
+        context=context
     ) as url:
-    data = json.loads(url.read().decode())
+        data = json.loads(url.read().decode())
+
+origin_id = None
+for inst in data:
+    if inst["code"].strip().upper() == origin_acronym:
+        origin_id = inst["id"]
+
+if origin_id is None:
+    print("Institution not found. Please check the acronym and try again.")
+    exit()
+
+with urllib.request.urlopen(
+        f'https://assist.org/api/institutions/{origin_id}/agreements', 
+        context=context
+    ) as url:
+        data = json.loads(url.read().decode())
 
 cc_codes = []
 for college in list(data):
@@ -35,13 +54,13 @@ start_time = time.time()
 
 def getPrefixCode(code):
     with urllib.request.urlopen(
-        f'https://assist.org/api/agreements?receivingInstitutionId=7&sendingInstitutionId={code}&academicYearId=75&categoryCode=prefix',
+        f'https://assist.org/api/agreements?receivingInstitutionId={origin_id}&sendingInstitutionId={code}&academicYearId=76&categoryCode=prefix',
         context=context
     ) as url:
         data = json.loads(url.read().decode())
     data = data['reports']
     for report in list(data):
-        if prefix in report['label'] and report['ownerInstitutionId'] == 7:
+        if prefix in report['label'] and report['ownerInstitutionId'] == origin_id:
             prefixCode = report['key']
             prefixList = prefixCode.split("/")
             prefixCode = prefixList[-1]
@@ -61,7 +80,7 @@ for code in cc_codes:
         continue
 
     try:
-        url = f'https://assist.org/transfer/results?year=76&institution=7&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=75%2F{id}%2Fto%2F7%2FPrefix%2F{pC}'
+        url = f'https://assist.org/transfer/results?year=76&institution={origin_id}&agreement={id}&agreementType=from&view=agreement&viewBy=prefix&viewByKey=76%2F{id}%2Fto%2F{origin_id}%2FPrefix%2F{pC}'
         driver.get(url)
         
         search = True
