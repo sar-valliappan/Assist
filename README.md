@@ -1,8 +1,10 @@
-# ASSIST Course Lookup
+# Transferology - California Transfer Courses Lookup
 
-This Python project allows you to query the ASSIST API and retrieve course articulation information between California community colleges and universities.
+This Python project allows you to retrieve course articulation information between California community colleges and universities.
 
-Assist.org currently does not have the functionality to search for what community college courses correlate to a given 4-year university course, only the other way around. This project aims to fix that.
+I wanted to take a community college class over the summer to satisfy prerequisites for a class next fall. However, there's no easy way to search for all the community colleges that offer that class.
+
+Assist.org currently only allows a user to search for what course at a selected 4-year university is equivalent to a given course at a community college. There is no way to reverse this search, allowing the user to search for all community college courses that are equivalent to a given course at a 4-year university. This project aims to fix that.
 
 ---
 
@@ -70,3 +72,12 @@ Evergreen Valley College
 3. It finds the target course and extracts prerequisite groups.
 
 4. Prerequisite groups are combined according to the group-level conjunctions (AND / OR).
+
+
+## Future Enhancements
+
+1. Add a link to that class's course schedule to verify if it is being offered.
+
+2. Add filtering for online versus in-person classes.
+
+3. Add filtering for specific cities and regions.
